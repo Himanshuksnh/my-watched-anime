@@ -1,0 +1,32 @@
+{
+  "sampleAnimes": [
+    {
+      "name": "Attack on Titan",
+      "language": "Japanese",
+      "season": "Final Season",
+      "totalEpisodes": 87,
+      "imageUrl": "https://example.com/aot.jpg"
+    },
+    {
+      "name": "Demon Slayer",
+      "language": "Japanese",
+      "season": "Season 3",
+      "totalEpisodes": 44,
+      "imageUrl": "https://example.com/demon-slayer.jpg"
+    },
+    {
+      "name": "Naruto Shippuden",
+      "language": "Hindi",
+      "season": "Complete Series",
+      "totalEpisodes": 500,
+      "imageUrl": "https://example.com/naruto.jpg"
+    },
+    {
+      "name": "Avatar: The Last Airbender",
+      "language": "English",
+      "season": "Book 3",
+      "totalEpisodes": 61,
+      "imageUrl": "https://example.com/avatar.jpg"
+    }
+  ]
+}
