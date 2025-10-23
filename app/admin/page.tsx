@@ -5,7 +5,7 @@ import { collection, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from "
 import { db } from "@/lib/firebase"
 import AnimeForm from "@/components/anime-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Shield, Plus, Download, Film, PlayCircle, Globe } from "lucide-react"
+import { Shield, Plus, Download, Film, PlayCircle, Globe, AlertTriangle } from "lucide-react"
 
 interface Anime {
   id: string
@@ -181,6 +181,10 @@ export default function AdminPanel() {
     return acc
   }, {} as Record<string, { count: number; episodes: number }>)
 
+  // Filter incomplete anime (missing season or episodes)
+  const incompleteAnimes = animes.filter(anime => !anime.season || !anime.totalEpisodes || anime.totalEpisodes === 0)
+  const completeAnimes = animes.filter(anime => anime.season && anime.totalEpisodes && anime.totalEpisodes > 0)
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -305,6 +309,44 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Incomplete Anime Alert */}
+            {incompleteAnimes.length > 0 && (
+              <Card className="mt-4 border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2 text-orange-600">
+                    <AlertTriangle className="h-5 w-5" />
+                    Incomplete Anime ({incompleteAnimes.length})
+                  </CardTitle>
+                  <CardDescription>These anime are missing season or episode information</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {incompleteAnimes.map((anime) => (
+                      <div 
+                        key={anime.id} 
+                        className="flex items-center justify-between p-3 bg-background rounded-lg border border-orange-200 dark:border-orange-800 hover:bg-orange-100/50 dark:hover:bg-orange-900/20 cursor-pointer transition"
+                        onClick={() => openEditModal(anime)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate">{anime.name}</p>
+                          <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                            {!anime.season && <span className="text-orange-600">• Missing Season</span>}
+                            {(!anime.totalEpisodes || anime.totalEpisodes === 0) && <span className="text-orange-600">• Missing Episodes</span>}
+                          </div>
+                        </div>
+                        <button
+                          className="px-3 py-1 rounded bg-orange-600 text-white text-xs font-semibold hover:bg-orange-700 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); openEditModal(anime); }}
+                        >
+                          Complete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Admin Actions */}
@@ -372,7 +414,7 @@ export default function AdminPanel() {
                   <div className="text-center py-8 text-muted-foreground">No anime found.</div>
                 ) : (
                   <div className="space-y-4">
-                    {animes.filter(a => a.name.toLowerCase().includes(search.toLowerCase())).map((anime) => (
+                    {completeAnimes.filter(a => a.name.toLowerCase().includes(search.toLowerCase())).map((anime) => (
                       <div key={anime.id} className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 border-b pb-2 cursor-pointer hover:bg-muted/50 transition" onClick={() => openEditModal(anime)}>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold truncate">{anime.name}</div>
