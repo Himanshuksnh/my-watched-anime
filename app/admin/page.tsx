@@ -5,7 +5,7 @@ import { collection, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from "
 import { db } from "@/lib/firebase"
 import AnimeForm from "@/components/anime-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Shield, Plus } from "lucide-react"
+import { Shield, Plus, Download, Film, PlayCircle, Globe } from "lucide-react"
 
 interface Anime {
   id: string
@@ -68,6 +68,48 @@ export default function AdminPanel() {
     fetchAnimes()
   }
 
+  // Download anime list as text file
+  const downloadAnimeList = () => {
+    let textContent = "ANIME COLLECTION LIST\n"
+    textContent += "=".repeat(50) + "\n\n"
+    textContent += `Total Anime: ${animes.length}\n`
+    textContent += `Generated: ${new Date().toLocaleString()}\n\n`
+    textContent += "=".repeat(50) + "\n\n"
+
+    // Group by language
+    const grouped = animes.reduce((acc, anime) => {
+      const lang = anime.language || "Unknown"
+      if (!acc[lang]) acc[lang] = []
+      acc[lang].push(anime)
+      return acc
+    }, {} as Record<string, Anime[]>)
+
+    Object.entries(grouped).forEach(([language, animeList]) => {
+      textContent += `\n${language.toUpperCase()} (${animeList.length} anime)\n`
+      textContent += "-".repeat(50) + "\n"
+      
+      animeList.forEach((anime, index) => {
+        textContent += `${index + 1}. ${anime.name}\n`
+        if (anime.season) textContent += `   Season: ${anime.season}\n`
+        textContent += `   Episodes: ${anime.totalEpisodes || "N/A"}\n`
+        if (anime.featuredRank) textContent += `   Featured Rank: ${anime.featuredRank}\n`
+        textContent += `   Image: ${anime.imageUrl}\n`
+        textContent += "\n"
+      })
+    })
+
+    // Create and download file
+    const blob = new Blob([textContent], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `anime-list-${new Date().toISOString().split("T")[0]}.txt`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   // Edit anime details
   const openEditModal = (anime: Anime) => {
     setSelectedAnime(anime)
@@ -98,6 +140,19 @@ export default function AdminPanel() {
     closeEditModal()
     fetchAnimes()
   }
+
+  // Calculate statistics
+  const totalAnimes = animes.length
+  const totalEpisodes = animes.reduce((sum, anime) => sum + (anime.totalEpisodes || 0), 0)
+  const languageStats = animes.reduce((acc, anime) => {
+    const lang = anime.language || "Unknown"
+    if (!acc[lang]) {
+      acc[lang] = { count: 0, episodes: 0 }
+    }
+    acc[lang].count++
+    acc[lang].episodes += anime.totalEpisodes || 0
+    return acc
+  }, {} as Record<string, { count: number; episodes: number }>)
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,6 +201,85 @@ export default function AdminPanel() {
             <p className="text-muted-foreground text-lg">Manage your anime collection</p>
           </div>
 
+          {/* Statistics Cards */}
+          <div className="max-w-6xl mx-auto mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Total Anime */}
+              <Card className="border-purple-200 dark:border-purple-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Total Anime</p>
+                      <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        {totalAnimes}
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                      <Film className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Total Episodes */}
+              <Card className="border-blue-200 dark:border-blue-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Total Episodes</p>
+                      <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                        {totalEpisodes.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center">
+                      <PlayCircle className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Languages */}
+              <Card className="border-green-200 dark:border-green-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Languages</p>
+                      <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                        {Object.keys(languageStats).length}
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                      <Globe className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Language Breakdown */}
+            {Object.keys(languageStats).length > 0 && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="text-lg">Language Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {Object.entries(languageStats)
+                      .sort(([, a], [, b]) => b.count - a.count)
+                      .map(([lang, stats]) => (
+                        <div key={lang} className="bg-muted/50 rounded-lg p-3 border">
+                          <p className="font-semibold text-sm truncate">{lang}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {stats.count} anime • {stats.episodes.toLocaleString()} eps
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
           {/* Admin Actions */}
           <div className="max-w-4xl mx-auto space-y-8">
             {/* Add New Anime */}
@@ -187,8 +321,8 @@ export default function AdminPanel() {
                 <CardDescription>Edit, search, or delete anime. Click an anime to edit its details.</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Search Bar */}
-                <div className="mb-4 flex justify-end">
+                {/* Search Bar and Download Button */}
+                <div className="mb-4 flex flex-col md:flex-row gap-3 justify-between">
                   <input
                     type="text"
                     className="w-full md:w-1/2 px-3 py-2 border border-purple-400 rounded text-sm bg-white text-black focus:border-purple-600 focus:outline-none"
@@ -196,6 +330,14 @@ export default function AdminPanel() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
+                  <button
+                    onClick={downloadAnimeList}
+                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
+                    disabled={animes.length === 0}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download List ({animes.length})
+                  </button>
                 </div>
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">Loading anime...</div>
