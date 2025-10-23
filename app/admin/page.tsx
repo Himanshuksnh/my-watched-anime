@@ -32,6 +32,15 @@ export default function AdminPanel() {
   const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null)
   const [editAnime, setEditAnime] = useState<Partial<Anime>>({})
   const [editLoading, setEditLoading] = useState(false)
+  const [showDownloadModal, setShowDownloadModal] = useState(false)
+  const [downloadOptions, setDownloadOptions] = useState({
+    name: true,
+    language: true,
+    season: true,
+    episodes: true,
+    featuredRank: true,
+    imageUrl: true,
+  })
 
   useEffect(() => {
     fetchAnimes()
@@ -89,11 +98,24 @@ export default function AdminPanel() {
       textContent += "-".repeat(50) + "\n"
       
       animeList.forEach((anime, index) => {
-        textContent += `${index + 1}. ${anime.name}\n`
-        if (anime.season) textContent += `   Season: ${anime.season}\n`
-        textContent += `   Episodes: ${anime.totalEpisodes || "N/A"}\n`
-        if (anime.featuredRank) textContent += `   Featured Rank: ${anime.featuredRank}\n`
-        textContent += `   Image: ${anime.imageUrl}\n`
+        if (downloadOptions.name) {
+          textContent += `${index + 1}. ${anime.name}\n`
+        }
+        if (downloadOptions.language && anime.language) {
+          textContent += `   Language: ${anime.language}\n`
+        }
+        if (downloadOptions.season && anime.season) {
+          textContent += `   Season: ${anime.season}\n`
+        }
+        if (downloadOptions.episodes) {
+          textContent += `   Episodes: ${anime.totalEpisodes || "N/A"}\n`
+        }
+        if (downloadOptions.featuredRank && anime.featuredRank) {
+          textContent += `   Featured Rank: ${anime.featuredRank}\n`
+        }
+        if (downloadOptions.imageUrl) {
+          textContent += `   Image: ${anime.imageUrl}\n`
+        }
         textContent += "\n"
       })
     })
@@ -108,6 +130,11 @@ export default function AdminPanel() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+    setShowDownloadModal(false)
+  }
+
+  const toggleDownloadOption = (option: keyof typeof downloadOptions) => {
+    setDownloadOptions(prev => ({ ...prev, [option]: !prev[option] }))
   }
 
   // Edit anime details
@@ -331,7 +358,7 @@ export default function AdminPanel() {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                   <button
-                    onClick={downloadAnimeList}
+                    onClick={() => setShowDownloadModal(true)}
                     className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
                     disabled={animes.length === 0}
                   >
@@ -378,6 +405,116 @@ export default function AdminPanel() {
                         </button>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Download Options Modal */}
+                {showDownloadModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="bg-background border border-green-600 rounded-xl shadow-2xl p-8 w-full max-w-md relative">
+                      <button className="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-green-600" onClick={() => setShowDownloadModal(false)}>&times;</button>
+                      <h2 className="text-2xl font-bold mb-2 text-green-600 flex items-center gap-2">
+                        <Download className="h-6 w-6" />
+                        Download Options
+                      </h2>
+                      <p className="text-sm text-muted-foreground mb-6">Select what information to include in the text file</p>
+                      
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
+                          <input
+                            type="checkbox"
+                            checked={downloadOptions.name}
+                            onChange={() => toggleDownloadOption("name")}
+                            className="w-5 h-5 accent-green-600"
+                          />
+                          <div>
+                            <span className="font-semibold">Anime Name</span>
+                            <p className="text-xs text-muted-foreground">Include anime titles</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
+                          <input
+                            type="checkbox"
+                            checked={downloadOptions.language}
+                            onChange={() => toggleDownloadOption("language")}
+                            className="w-5 h-5 accent-green-600"
+                          />
+                          <div>
+                            <span className="font-semibold">Language</span>
+                            <p className="text-xs text-muted-foreground">Include language information</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
+                          <input
+                            type="checkbox"
+                            checked={downloadOptions.season}
+                            onChange={() => toggleDownloadOption("season")}
+                            className="w-5 h-5 accent-green-600"
+                          />
+                          <div>
+                            <span className="font-semibold">Season</span>
+                            <p className="text-xs text-muted-foreground">Include season details</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
+                          <input
+                            type="checkbox"
+                            checked={downloadOptions.episodes}
+                            onChange={() => toggleDownloadOption("episodes")}
+                            className="w-5 h-5 accent-green-600"
+                          />
+                          <div>
+                            <span className="font-semibold">Total Episodes</span>
+                            <p className="text-xs text-muted-foreground">Include episode count</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
+                          <input
+                            type="checkbox"
+                            checked={downloadOptions.featuredRank}
+                            onChange={() => toggleDownloadOption("featuredRank")}
+                            className="w-5 h-5 accent-green-600"
+                          />
+                          <div>
+                            <span className="font-semibold">Featured Rank</span>
+                            <p className="text-xs text-muted-foreground">Include featured ranking (1-10)</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
+                          <input
+                            type="checkbox"
+                            checked={downloadOptions.imageUrl}
+                            onChange={() => toggleDownloadOption("imageUrl")}
+                            className="w-5 h-5 accent-green-600"
+                          />
+                          <div>
+                            <span className="font-semibold">Image URL</span>
+                            <p className="text-xs text-muted-foreground">Include Cloudinary image links</p>
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className="flex gap-3 mt-8">
+                        <button 
+                          className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded font-semibold hover:from-green-700 hover:to-emerald-700 transition flex items-center justify-center gap-2" 
+                          onClick={downloadAnimeList}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download Now
+                        </button>
+                        <button 
+                          className="flex-1 bg-muted px-4 py-2 rounded font-semibold text-muted-foreground hover:bg-green-100" 
+                          onClick={() => setShowDownloadModal(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
