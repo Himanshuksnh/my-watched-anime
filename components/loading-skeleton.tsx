@@ -1,22 +1,29 @@
+"use client"
+
 export default function LoadingSkeleton() {
   return (
-    <div className="bg-card rounded-lg overflow-hidden shadow-lg animate-pulse">
-      {/* Image Skeleton */}
-      <div className="aspect-[3/4] bg-gradient-to-br from-muted to-muted/50" />
-
-      {/* Content Skeleton */}
-      <div className="p-4 space-y-3">
-        {/* Title */}
-        <div className="h-5 bg-muted rounded w-3/4" />
-
-        {/* Details */}
-        <div className="flex justify-between">
-          <div className="h-4 bg-muted rounded w-20" />
-          <div className="h-4 bg-muted rounded w-16" />
+    <div 
+      className="anime-card card-width-desktop"
+      style={{ pointerEvents: 'none' }}
+    >
+      <div className="anime-card-poster">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a24] to-[#12121a] animate-pulse" />
+      </div>
+      <div className="anime-card-footer" style={{ borderLeftColor: 'var(--border-default)' }}>
+        <div 
+          className="h-3 rounded w-3/4 mb-2 animate-pulse"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+        />
+        <div className="anime-card-meta">
+          <div 
+            className="h-2.5 rounded w-12 animate-pulse"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+          />
+          <div 
+            className="h-2.5 rounded w-8 animate-pulse"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+          />
         </div>
-
-        {/* Progress Bar */}
-        <div className="h-1 bg-muted rounded w-full" />
       </div>
     </div>
   )

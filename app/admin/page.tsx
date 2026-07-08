@@ -4,8 +4,6 @@ import { useState, useEffect } from "react"
 import { collection, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import AnimeForm from "@/components/anime-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Shield, Plus, Download, Film, PlayCircle, Globe, AlertTriangle } from "lucide-react"
 
 interface Anime {
   id: string
@@ -16,6 +14,7 @@ interface Anime {
   imageUrl: string
   createdAt: any
   featuredRank?: number | null
+  imagePosition?: number
 }
 
 export default function AdminPanel() {
@@ -41,10 +40,24 @@ export default function AdminPanel() {
     featuredRank: true,
     imageUrl: true,
   })
+  const [bannerCount, setBannerCount] = useState(5)
+  const [bannerInterval, setBannerInterval] = useState(5)
+  const [hoveredAnime, setHoveredAnime] = useState<Anime | null>(null)
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     fetchAnimes()
+    const savedCount = localStorage.getItem('bannerCount')
+    const savedInterval = localStorage.getItem('bannerInterval')
+    if (savedCount) setBannerCount(Number(savedCount))
+    if (savedInterval) setBannerInterval(Number(savedInterval))
   }, [])
+
+  const saveBannerSettings = () => {
+    localStorage.setItem('bannerCount', String(bannerCount))
+    localStorage.setItem('bannerInterval', String(bannerInterval))
+    alert('Banner settings saved!')
+  }
 
   const fetchAnimes = async () => {
     setLoading(true)
@@ -69,6 +82,14 @@ export default function AdminPanel() {
     fetchAnimes()
   }
 
+  const saveImagePosition = async (id: string, position: number) => {
+    setSaving(id)
+    const animeDoc = doc(db, "animes", id)
+    await updateDoc(animeDoc, { imagePosition: position })
+    setSaving(null)
+    fetchAnimes()
+  }
+
   const deleteAnime = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this anime?")) return
     setDeleting(id)
@@ -77,7 +98,6 @@ export default function AdminPanel() {
     fetchAnimes()
   }
 
-  // Download anime list as text file
   const downloadAnimeList = () => {
     let textContent = "ANIME COLLECTION LIST\n"
     textContent += "=".repeat(50) + "\n\n"
@@ -85,7 +105,6 @@ export default function AdminPanel() {
     textContent += `Generated: ${new Date().toLocaleString()}\n\n`
     textContent += "=".repeat(50) + "\n\n"
 
-    // Group by language
     const grouped = animes.reduce((acc, anime) => {
       const lang = anime.language || "Unknown"
       if (!acc[lang]) acc[lang] = []
@@ -98,29 +117,16 @@ export default function AdminPanel() {
       textContent += "-".repeat(50) + "\n"
       
       animeList.forEach((anime, index) => {
-        if (downloadOptions.name) {
-          textContent += `${index + 1}. ${anime.name}\n`
-        }
-        if (downloadOptions.language && anime.language) {
-          textContent += `   Language: ${anime.language}\n`
-        }
-        if (downloadOptions.season && anime.season) {
-          textContent += `   Season: ${anime.season}\n`
-        }
-        if (downloadOptions.episodes) {
-          textContent += `   Episodes: ${anime.totalEpisodes || "N/A"}\n`
-        }
-        if (downloadOptions.featuredRank && anime.featuredRank) {
-          textContent += `   Featured Rank: ${anime.featuredRank}\n`
-        }
-        if (downloadOptions.imageUrl) {
-          textContent += `   Image: ${anime.imageUrl}\n`
-        }
+        if (downloadOptions.name) textContent += `${index + 1}. ${anime.name}\n`
+        if (downloadOptions.language && anime.language) textContent += `   Language: ${anime.language}\n`
+        if (downloadOptions.season && anime.season) textContent += `   Season: ${anime.season}\n`
+        if (downloadOptions.episodes) textContent += `   Episodes: ${anime.totalEpisodes || "N/A"}\n`
+        if (downloadOptions.featuredRank && anime.featuredRank) textContent += `   Featured Rank: ${anime.featuredRank}\n`
+        if (downloadOptions.imageUrl) textContent += `   Image: ${anime.imageUrl}\n`
         textContent += "\n"
       })
     })
 
-    // Create and download file
     const blob = new Blob([textContent], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -137,7 +143,6 @@ export default function AdminPanel() {
     setDownloadOptions(prev => ({ ...prev, [option]: !prev[option] }))
   }
 
-  // Edit anime details
   const openEditModal = (anime: Anime) => {
     setSelectedAnime(anime)
     setEditAnime({ ...anime })
@@ -148,8 +153,17 @@ export default function AdminPanel() {
     setEditAnime({})
   }
 
-  const handleEditChange = (field: keyof Anime, value: string) => {
+  const handleEditChange = (field: keyof Anime, value: any) => {
     setEditAnime((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const saveImagePositionInModal = async (position: number) => {
+    if (!selectedAnime) return
+    handleEditChange("imagePosition", position)
+    setEditLoading(true)
+    const animeDoc = doc(db, "animes", selectedAnime.id)
+    await updateDoc(animeDoc, { imagePosition: position })
+    setEditLoading(false)
   }
 
   const saveAnimeEdit = async () => {
@@ -162,443 +176,726 @@ export default function AdminPanel() {
       season: editAnime.season || null,
       totalEpisodes: editAnime.totalEpisodes ? Number(editAnime.totalEpisodes) : null,
       featuredRank: editAnime.featuredRank ? Number(editAnime.featuredRank) : null,
+      imagePosition: editAnime.imagePosition ?? 50,
     })
     setEditLoading(false)
     closeEditModal()
     fetchAnimes()
   }
 
-  // Calculate statistics
   const totalAnimes = animes.length
   const totalEpisodes = animes.reduce((sum, anime) => sum + (anime.totalEpisodes || 0), 0)
   const languageStats = animes.reduce((acc, anime) => {
     const lang = anime.language || "Unknown"
-    if (!acc[lang]) {
-      acc[lang] = { count: 0, episodes: 0 }
-    }
+    if (!acc[lang]) acc[lang] = { count: 0, episodes: 0 }
     acc[lang].count++
     acc[lang].episodes += anime.totalEpisodes || 0
     return acc
   }, {} as Record<string, { count: number; episodes: number }>)
 
-  // Filter incomplete anime (missing season or episodes)
   const incompleteAnimes = animes.filter(anime => !anime.season || !anime.totalEpisodes || anime.totalEpisodes === 0)
   const completeAnimes = animes.filter(anime => anime.season && anime.totalEpisodes && anime.totalEpisodes > 0)
 
+  const langColors: Record<string, string> = {
+    Japanese: "var(--lang-japanese)",
+    Hindi: "var(--lang-hindi)",
+    English: "var(--lang-english)",
+    Chinese: "var(--lang-chinese)",
+  }
+
+  // Locked Screen
+  if (locked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <div 
+          className="w-full max-w-sm p-8 rounded-2xl"
+          style={{ 
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-default)'
+          }}
+        >
+          <div className="text-center mb-6">
+            <div 
+              className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, var(--accent-pink), var(--accent-orange))' }}
+            >
+              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h1 
+              className="text-2xl font-bold mb-1"
+              style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}
+            >
+              Admin Panel
+            </h1>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Enter password to access
+            </p>
+          </div>
+          
+          <input
+            type="password"
+            className="w-full px-4 py-3 rounded-lg text-sm mb-4"
+            style={{ 
+              backgroundColor: 'var(--bg-page)',
+              border: '1px solid var(--border-default)',
+              color: 'var(--text-primary)'
+            }}
+            placeholder="Password..."
+            value={passwordInput}
+            onChange={e => { setPasswordInput(e.target.value); setPasswordError("") }}
+            onKeyDown={e => { if (e.key === "Enter") { if (passwordInput === "himanshu4526") { setLocked(false) } else { setPasswordError("Incorrect password") } } }}
+          />
+          
+          <button
+            className="w-full py-3 rounded-lg font-semibold text-white transition-all duration-200"
+            style={{ background: 'linear-gradient(135deg, var(--accent-pink), var(--accent-orange))' }}
+            onClick={() => { if (passwordInput === "himanshu4526") { setLocked(false) } else { setPasswordError("Incorrect password") } }}
+          >
+            Unlock
+          </button>
+          
+          {passwordError && (
+            <p className="text-red-400 text-sm text-center mt-3">{passwordError}</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Lock Screen */}
-        {locked ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <Card className="max-w-sm w-full p-6 border border-purple-600 shadow-xl">
-              <CardHeader className="text-center">
-                <CardTitle className="flex items-center justify-center gap-2">
-                  <Shield className="h-6 w-6 text-purple-600" />
-                  Admin Panel Locked
-                </CardTitle>
-                <CardDescription>Enter password to access admin features</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <input
-                  type="password"
-                  className="w-full px-3 py-2 border border-purple-400 rounded bg-white text-black focus:border-purple-600 focus:outline-none mb-3"
-                  placeholder="Enter password..."
-                  value={passwordInput}
-                  onChange={e => { setPasswordInput(e.target.value); setPasswordError("") }}
-                  onKeyDown={e => { if (e.key === "Enter") { if (passwordInput === "himanshu4526") { setLocked(false) } else { setPasswordError("Incorrect password") } } }}
-                />
-                <button
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded font-semibold hover:from-purple-700 hover:to-pink-700 transition mb-2"
-                  onClick={() => { if (passwordInput === "himanshu4526") { setLocked(false) } else { setPasswordError("Incorrect password") } }}
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
+        
+        {/* Header */}
+        <div className="text-center mb-10 animate-fade-in-up">
+          <h1 
+            className="text-3xl md:text-4xl font-bold mb-2"
+            style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}
+          >
+            Admin Panel
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Manage your anime collection
+          </p>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div 
+            className="p-5 rounded-xl"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Total Anime</p>
+                <p 
+                  className="text-3xl font-bold"
+                  style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--lang-japanese)' }}
                 >
-                  Unlock
+                  {totalAnimes}
+                </p>
+              </div>
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: 'rgba(232, 93, 117, 0.15)' }}
+              >
+                <svg className="w-6 h-6" style={{ color: 'var(--lang-japanese)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div 
+            className="p-5 rounded-xl"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Total Episodes</p>
+                <p 
+                  className="text-3xl font-bold"
+                  style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--lang-english)' }}
+                >
+                  {totalEpisodes.toLocaleString()}
+                </p>
+              </div>
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: 'rgba(77, 168, 218, 0.15)' }}
+              >
+                <svg className="w-6 h-6" style={{ color: 'var(--lang-english)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div 
+            className="p-5 rounded-xl"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Languages</p>
+                <p 
+                  className="text-3xl font-bold"
+                  style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--lang-hindi)' }}
+                >
+                  {Object.keys(languageStats).length}
+                </p>
+              </div>
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: 'rgba(232, 135, 61, 0.15)' }}
+              >
+                <svg className="w-6 h-6" style={{ color: 'var(--lang-hindi)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Banner Settings */}
+        <div 
+          className="p-6 rounded-xl mb-8"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+        >
+          <h2 
+            className="text-lg font-semibold mb-4 flex items-center gap-2"
+            style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}
+          >
+            <svg className="w-5 h-5" style={{ color: 'var(--lang-japanese)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Hero Banner Settings
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+                Banner Anime Count
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={bannerCount}
+                  onChange={(e) => setBannerCount(Number(e.target.value))}
+                  className="flex-1 accent-purple-600"
+                />
+                <span 
+                  className="text-2xl font-bold w-12 text-center"
+                  style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--lang-japanese)' }}
+                >
+                  {bannerCount}
+                </span>
+              </div>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+                Showing {animes.filter(a => a.featuredRank && a.featuredRank >= 1 && a.featuredRank <= bannerCount).length} anime
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+                Slide Interval (seconds)
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="3"
+                  max="15"
+                  value={bannerInterval}
+                  onChange={(e) => setBannerInterval(Number(e.target.value))}
+                  className="flex-1 accent-purple-600"
+                />
+                <span 
+                  className="text-2xl font-bold w-12 text-center"
+                  style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--lang-english)' }}
+                >
+                  {bannerInterval}s
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={saveBannerSettings}
+            className="mt-6 px-6 py-2.5 rounded-lg font-semibold text-white transition-all duration-200"
+            style={{ background: 'linear-gradient(135deg, var(--accent-pink), var(--accent-orange))' }}
+          >
+            Save Settings
+          </button>
+        </div>
+
+        {/* Add Anime */}
+        <div className="mb-8">
+          {!showForm ? (
+            <button
+              onClick={() => setShowForm(true)}
+              className="w-full p-6 rounded-xl border-2 border-dashed transition-all duration-200 hover:scale-[1.01]"
+              style={{ 
+                borderColor: 'var(--border-default)',
+                backgroundColor: 'var(--bg-card)'
+              }}
+            >
+              <div className="flex items-center justify-center gap-3">
+                <svg className="w-6 h-6" style={{ color: 'var(--text-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Add New Anime</span>
+              </div>
+            </button>
+          ) : (
+            <div 
+              className="p-6 rounded-xl"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 
+                  className="text-lg font-semibold"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}
+                >
+                  Add New Anime
+                </h2>
+                <button 
+                  onClick={() => setShowForm(false)}
+                  className="text-sm"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Cancel
                 </button>
-                {passwordError && <div className="text-red-600 text-sm text-center">{passwordError}</div>}
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          // ...existing code...
-          <>
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Shield className="h-8 w-8 text-purple-600" />
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Admin Panel
-              </h1>
+              </div>
+              <AnimeForm onSuccess={() => { setShowForm(false); fetchAnimes(); }} onCancel={() => setShowForm(false)} />
             </div>
-            <p className="text-muted-foreground text-lg">Manage your anime collection</p>
-          </div>
+          )}
+        </div>
 
-          {/* Statistics Cards */}
-          <div className="max-w-6xl mx-auto mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Total Anime */}
-              <Card className="border-purple-200 dark:border-purple-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Total Anime</p>
-                      <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                        {totalAnimes}
-                      </p>
-                    </div>
-                    <div className="h-12 w-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-                      <Film className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Total Episodes */}
-              <Card className="border-blue-200 dark:border-blue-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Total Episodes</p>
-                      <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                        {totalEpisodes.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="h-12 w-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center">
-                      <PlayCircle className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Languages */}
-              <Card className="border-green-200 dark:border-green-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Languages</p>
-                      <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                        {Object.keys(languageStats).length}
-                      </p>
-                    </div>
-                    <div className="h-12 w-12 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                      <Globe className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        {/* Search & Anime List */}
+        <div 
+          className="p-6 rounded-xl"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+        >
+          <div className="flex flex-col md:flex-row gap-3 mb-6">
+            <div className="flex-1 relative">
+              <svg 
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                style={{ color: 'var(--text-secondary)' }} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm"
+                style={{ 
+                  backgroundColor: 'var(--bg-page)',
+                  border: '1px solid var(--border-default)',
+                  color: 'var(--text-primary)'
+                }}
+                placeholder="Search anime..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-
-            {/* Language Breakdown */}
-            {Object.keys(languageStats).length > 0 && (
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle className="text-lg">Language Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {Object.entries(languageStats)
-                      .sort(([, a], [, b]) => b.count - a.count)
-                      .map(([lang, stats]) => (
-                        <div key={lang} className="bg-muted/50 rounded-lg p-3 border">
-                          <p className="font-semibold text-sm truncate">{lang}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {stats.count} anime • {stats.episodes.toLocaleString()} eps
-                          </p>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Incomplete Anime Alert */}
-            {incompleteAnimes.length > 0 && (
-              <Card className="mt-4 border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2 text-orange-600">
-                    <AlertTriangle className="h-5 w-5" />
-                    Incomplete Anime ({incompleteAnimes.length})
-                  </CardTitle>
-                  <CardDescription>These anime are missing season or episode information</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {incompleteAnimes.map((anime) => (
-                      <div 
-                        key={anime.id} 
-                        className="flex items-center justify-between p-3 bg-background rounded-lg border border-orange-200 dark:border-orange-800 hover:bg-orange-100/50 dark:hover:bg-orange-900/20 cursor-pointer transition"
-                        onClick={() => openEditModal(anime)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">{anime.name}</p>
-                          <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                            {!anime.season && <span className="text-orange-600">• Missing Season</span>}
-                            {(!anime.totalEpisodes || anime.totalEpisodes === 0) && <span className="text-orange-600">• Missing Episodes</span>}
-                          </div>
-                        </div>
-                        <button
-                          className="px-3 py-1 rounded bg-orange-600 text-white text-xs font-semibold hover:bg-orange-700 transition-colors"
-                          onClick={(e) => { e.stopPropagation(); openEditModal(anime); }}
-                        >
-                          Complete
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <button
+              onClick={() => setShowDownloadModal(true)}
+              className="px-4 py-2.5 rounded-lg font-medium text-white text-sm flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, var(--accent-cyan), #0891b2)' }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download ({animes.length})
+            </button>
           </div>
 
-          {/* Admin Actions */}
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* Add New Anime */}
-            {!showForm ? (
-              <Card className="border-2 border-dashed border-muted-foreground/25 hover:border-purple-500/50 transition-colors">
-                <CardHeader className="text-center">
-                  <CardTitle className="flex items-center justify-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    Add New Anime
-                  </CardTitle>
-                  <CardDescription>Click below to add a new anime to your collection</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <button
-                    onClick={() => setShowForm(true)}
-                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all duration-200 transform hover:scale-105"
+          {loading ? (
+            <div className="text-center py-12" style={{ color: 'var(--text-secondary)' }}>
+              Loading...
+            </div>
+          ) : completeAnimes.length === 0 ? (
+            <div className="text-center py-12" style={{ color: 'var(--text-secondary)' }}>
+              No anime found
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {completeAnimes
+                .filter(a => a.name.toLowerCase().includes(search.toLowerCase()))
+                .map((anime) => (
+                  <div 
+                    key={anime.id}
+                    className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer"
+                    style={{ borderBottom: '1px solid var(--border-default)' }}
+                    onClick={() => openEditModal(anime)}
+                    onMouseEnter={(e) => {
+                      setHoveredAnime(anime)
+                      setHoverPosition({ x: e.clientX, y: e.clientY })
+                      e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)'
+                    }}
+                    onMouseMove={(e) => setHoverPosition({ x: e.clientX, y: e.clientY })}
+                    onMouseLeave={(e) => {
+                      setHoveredAnime(null)
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }}
                   >
-                    <Plus className="h-4 w-4" />
-                    Add Anime
-                  </button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Add New Anime</CardTitle>
-                  <CardDescription>Fill in the details below to add a new anime to your collection</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AnimeForm onSuccess={() => { setShowForm(false); fetchAnimes(); }} onCancel={() => setShowForm(false)} />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Manage Existing Anime */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Manage Uploaded Anime</CardTitle>
-                <CardDescription>Edit, search, or delete anime. Click an anime to edit its details.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Search Bar and Download Button */}
-                <div className="mb-4 flex flex-col md:flex-row gap-3 justify-between">
-                  <input
-                    type="text"
-                    className="w-full md:w-1/2 px-3 py-2 border border-purple-400 rounded text-sm bg-white text-black focus:border-purple-600 focus:outline-none"
-                    placeholder="Search anime by name..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                  <button
-                    onClick={() => setShowDownloadModal(true)}
-                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
-                    disabled={animes.length === 0}
-                  >
-                    <Download className="h-4 w-4" />
-                    Download List ({animes.length})
-                  </button>
-                </div>
-                {loading ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading anime...</div>
-                ) : animes.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">No anime found.</div>
-                ) : (
-                  <div className="space-y-4">
-                    {completeAnimes.filter(a => a.name.toLowerCase().includes(search.toLowerCase())).map((anime) => (
-                      <div key={anime.id} className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 border-b pb-2 cursor-pointer hover:bg-muted/50 transition" onClick={() => openEditModal(anime)}>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold truncate">{anime.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">{anime.language || "No language"} | {anime.season || "No season"} | {anime.totalEpisodes || "No episodes"} episodes</div>
-                        </div>
-                        <input
-                          type="number"
-                          min="1"
-                          max="10"
-                          className="w-20 px-2 py-1 border rounded text-sm"
-                          placeholder="Rank"
-                          value={editRanks[anime.id] ?? (anime.featuredRank ?? "")}
-                          onChange={(e) => handleRankChange(anime.id, e.target.value)}
-                          disabled={saving === anime.id}
-                          onClick={e => e.stopPropagation()}
-                        />
-                        <button
-                          className="px-3 py-1 rounded bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-colors disabled:opacity-60"
-                          onClick={e => { e.stopPropagation(); saveRank(anime.id); }}
-                          disabled={saving === anime.id}
-                        >
-                          {saving === anime.id ? "Saving..." : "Save Rank"}
-                        </button>
-                        <button
-                          className="px-3 py-1 rounded bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
-                          onClick={e => { e.stopPropagation(); deleteAnime(anime.id); }}
-                          disabled={deleting === anime.id}
-                        >
-                          {deleting === anime.id ? "Deleting..." : "Delete"}
-                        </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                        {anime.name}
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Download Options Modal */}
-                {showDownloadModal && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                    <div className="bg-background border border-green-600 rounded-xl shadow-2xl p-8 w-full max-w-md relative">
-                      <button className="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-green-600" onClick={() => setShowDownloadModal(false)}>&times;</button>
-                      <h2 className="text-2xl font-bold mb-2 text-green-600 flex items-center gap-2">
-                        <Download className="h-6 w-6" />
-                        Download Options
-                      </h2>
-                      <p className="text-sm text-muted-foreground mb-6">Select what information to include in the text file</p>
+                      <div className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
+                        <span style={{ color: langColors[anime.language] || 'var(--text-secondary)' }}>
+                          {anime.language}
+                        </span>
+                        {' · '}
+                        {anime.season || 'No season'} · {anime.totalEpisodes || 0} eps
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        className="w-16 px-2 py-1.5 rounded text-sm text-center"
+                        style={{ 
+                          backgroundColor: 'var(--bg-page)',
+                          border: '1px solid var(--border-default)',
+                          color: 'var(--text-primary)',
+                          fontFamily: "'JetBrains Mono', monospace"
+                        }}
+                        placeholder="Rank"
+                        value={editRanks[anime.id] ?? (anime.featuredRank ?? "")}
+                        onChange={(e) => handleRankChange(anime.id, e.target.value)}
+                        disabled={saving === anime.id}
+                      />
                       
-                      <div className="space-y-3">
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
-                          <input
-                            type="checkbox"
-                            checked={downloadOptions.name}
-                            onChange={() => toggleDownloadOption("name")}
-                            className="w-5 h-5 accent-green-600"
-                          />
-                          <div>
-                            <span className="font-semibold">Anime Name</span>
-                            <p className="text-xs text-muted-foreground">Include anime titles</p>
-                          </div>
-                        </label>
-
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
-                          <input
-                            type="checkbox"
-                            checked={downloadOptions.language}
-                            onChange={() => toggleDownloadOption("language")}
-                            className="w-5 h-5 accent-green-600"
-                          />
-                          <div>
-                            <span className="font-semibold">Language</span>
-                            <p className="text-xs text-muted-foreground">Include language information</p>
-                          </div>
-                        </label>
-
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
-                          <input
-                            type="checkbox"
-                            checked={downloadOptions.season}
-                            onChange={() => toggleDownloadOption("season")}
-                            className="w-5 h-5 accent-green-600"
-                          />
-                          <div>
-                            <span className="font-semibold">Season</span>
-                            <p className="text-xs text-muted-foreground">Include season details</p>
-                          </div>
-                        </label>
-
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
-                          <input
-                            type="checkbox"
-                            checked={downloadOptions.episodes}
-                            onChange={() => toggleDownloadOption("episodes")}
-                            className="w-5 h-5 accent-green-600"
-                          />
-                          <div>
-                            <span className="font-semibold">Total Episodes</span>
-                            <p className="text-xs text-muted-foreground">Include episode count</p>
-                          </div>
-                        </label>
-
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
-                          <input
-                            type="checkbox"
-                            checked={downloadOptions.featuredRank}
-                            onChange={() => toggleDownloadOption("featuredRank")}
-                            className="w-5 h-5 accent-green-600"
-                          />
-                          <div>
-                            <span className="font-semibold">Featured Rank</span>
-                            <p className="text-xs text-muted-foreground">Include featured ranking (1-10)</p>
-                          </div>
-                        </label>
-
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition">
-                          <input
-                            type="checkbox"
-                            checked={downloadOptions.imageUrl}
-                            onChange={() => toggleDownloadOption("imageUrl")}
-                            className="w-5 h-5 accent-green-600"
-                          />
-                          <div>
-                            <span className="font-semibold">Image URL</span>
-                            <p className="text-xs text-muted-foreground">Include Cloudinary image links</p>
-                          </div>
-                        </label>
-                      </div>
-
-                      <div className="flex gap-3 mt-8">
-                        <button 
-                          className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded font-semibold hover:from-green-700 hover:to-emerald-700 transition flex items-center justify-center gap-2" 
-                          onClick={downloadAnimeList}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          className="w-20 accent-purple-600"
+                          value={anime.imagePosition ?? 50}
+                          onChange={(e) => saveImagePosition(anime.id, Number(e.target.value))}
+                          disabled={saving === anime.id}
+                        />
+                        <span 
+                          className="text-xs w-8 text-right"
+                          style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}
                         >
-                          <Download className="h-4 w-4" />
-                          Download Now
-                        </button>
-                        <button 
-                          className="flex-1 bg-muted px-4 py-2 rounded font-semibold text-muted-foreground hover:bg-green-100" 
-                          onClick={() => setShowDownloadModal(false)}
-                        >
-                          Cancel
-                        </button>
+                          {anime.imagePosition ?? 50}%
+                        </span>
                       </div>
+                      
+                      <button
+                        className="px-3 py-1.5 rounded text-xs font-semibold text-white"
+                        style={{ backgroundColor: 'var(--lang-japanese)' }}
+                        onClick={(e) => { e.stopPropagation(); saveRank(anime.id) }}
+                        disabled={saving === anime.id}
+                      >
+                        {saving === anime.id ? '...' : 'Save'}
+                      </button>
+                      
+                      <button
+                        className="px-3 py-1.5 rounded text-xs font-semibold text-white"
+                        style={{ backgroundColor: '#ef4444' }}
+                        onClick={(e) => { e.stopPropagation(); deleteAnime(anime.id) }}
+                        disabled={deleting === anime.id}
+                      >
+                        {deleting === anime.id ? '...' : 'Del'}
+                      </button>
                     </div>
                   </div>
-                )}
+                ))}
+            </div>
+          )}
+        </div>
 
-                {/* Edit Modal */}
-                {selectedAnime && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                    <div className="bg-background border border-purple-600 rounded-xl shadow-2xl p-8 w-full max-w-md relative">
-                      <button className="absolute top-2 right-2 text-2xl text-muted-foreground hover:text-purple-600" onClick={closeEditModal}>&times;</button>
-                      <h2 className="text-2xl font-bold mb-6 text-purple-600">Edit Anime</h2>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold mb-1 text-muted-foreground">Name</label>
-                          <input type="text" className="w-full px-3 py-2 border border-purple-400 rounded bg-white text-black focus:border-purple-600 focus:outline-none" value={editAnime.name || ""} onChange={e => handleEditChange("name", e.target.value)} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold mb-1 text-muted-foreground">Language</label>
-                          <input type="text" className="w-full px-3 py-2 border border-purple-400 rounded bg-white text-black focus:border-purple-600 focus:outline-none" value={editAnime.language || ""} onChange={e => handleEditChange("language", e.target.value)} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold mb-1 text-muted-foreground">Season</label>
-                          <input type="text" className="w-full px-3 py-2 border border-purple-400 rounded bg-white text-black focus:border-purple-600 focus:outline-none" value={editAnime.season || ""} onChange={e => handleEditChange("season", e.target.value)} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold mb-1 text-muted-foreground">Total Episodes</label>
-                          <input type="number" min="1" className="w-full px-3 py-2 border border-purple-400 rounded bg-white text-black focus:border-purple-600 focus:outline-none" value={editAnime.totalEpisodes || ""} onChange={e => handleEditChange("totalEpisodes", e.target.value)} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold mb-1 text-muted-foreground">Featured Rank</label>
-                          <input type="number" min="1" max="10" className="w-full px-3 py-2 border border-purple-400 rounded bg-white text-black focus:border-purple-600 focus:outline-none" value={editAnime.featuredRank || ""} onChange={e => handleEditChange("featuredRank", e.target.value)} />
-                        </div>
-                      </div>
-                      <div className="flex gap-3 mt-8">
-                        <button className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded font-semibold hover:from-purple-700 hover:to-pink-700 transition" onClick={saveAnimeEdit} disabled={editLoading}>{editLoading ? "Saving..." : "Save Changes"}</button>
-                        <button className="flex-1 bg-muted px-4 py-2 rounded font-semibold text-muted-foreground hover:bg-purple-100" onClick={closeEditModal} disabled={editLoading}>Cancel</button>
-                      </div>
+        {/* Download Modal */}
+        {showDownloadModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+            <div 
+              className="w-full max-w-md p-6 rounded-2xl"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 
+                  className="text-xl font-bold"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}
+                >
+                  Download Options
+                </h2>
+                <button 
+                  onClick={() => setShowDownloadModal(false)}
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                {Object.entries(downloadOptions).map(([key, value]) => (
+                  <label 
+                    key={key}
+                    className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
+                    style={{ backgroundColor: value ? 'rgba(77, 168, 218, 0.1)' : 'transparent' }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={value}
+                      onChange={() => toggleDownloadOption(key as keyof typeof downloadOptions)}
+                      className="w-4 h-4 rounded"
+                      style={{ accentColor: 'var(--lang-english)' }}
+                    />
+                    <div>
+                      <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                        {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+                      </span>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  </label>
+                ))}
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={downloadAnimeList}
+                  className="flex-1 py-2.5 rounded-lg font-semibold text-white"
+                  style={{ background: 'linear-gradient(135deg, var(--accent-cyan), #0891b2)' }}
+                >
+                  Download
+                </button>
+                <button
+                  onClick={() => setShowDownloadModal(false)}
+                  className="flex-1 py-2.5 rounded-lg font-semibold"
+                  style={{ 
+                    backgroundColor: 'var(--bg-page)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-default)'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
-          </>
+        )}
+
+        {/* Edit Modal */}
+        {selectedAnime && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+            <div 
+              className="w-full max-w-lg p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 
+                  className="text-xl font-bold"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}
+                >
+                  Edit Anime
+                </h2>
+                <button 
+                  onClick={closeEditModal}
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Name</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-2.5 rounded-lg text-sm"
+                    style={{ 
+                      backgroundColor: 'var(--bg-page)',
+                      border: '1px solid var(--border-default)',
+                      color: 'var(--text-primary)'
+                    }}
+                    value={editAnime.name || ""} 
+                    onChange={e => handleEditChange("name", e.target.value)} 
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Language</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-4 py-2.5 rounded-lg text-sm"
+                      style={{ 
+                        backgroundColor: 'var(--bg-page)',
+                        border: '1px solid var(--border-default)',
+                        color: 'var(--text-primary)'
+                      }}
+                      value={editAnime.language || ""} 
+                      onChange={e => handleEditChange("language", e.target.value)} 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Season</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-4 py-2.5 rounded-lg text-sm"
+                      style={{ 
+                        backgroundColor: 'var(--bg-page)',
+                        border: '1px solid var(--border-default)',
+                        color: 'var(--text-primary)'
+                      }}
+                      value={editAnime.season || ""} 
+                      onChange={e => handleEditChange("season", e.target.value)} 
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Episodes</label>
+                    <input 
+                      type="number" 
+                      min="1"
+                      className="w-full px-4 py-2.5 rounded-lg text-sm"
+                      style={{ 
+                        backgroundColor: 'var(--bg-page)',
+                        border: '1px solid var(--border-default)',
+                        color: 'var(--text-primary)',
+                        fontFamily: "'JetBrains Mono', monospace"
+                      }}
+                      value={editAnime.totalEpisodes || ""} 
+                      onChange={e => handleEditChange("totalEpisodes", e.target.value)} 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Featured Rank</label>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      max="10"
+                      className="w-full px-4 py-2.5 rounded-lg text-sm"
+                      style={{ 
+                        backgroundColor: 'var(--bg-page)',
+                        border: '1px solid var(--border-default)',
+                        color: 'var(--text-primary)',
+                        fontFamily: "'JetBrains Mono', monospace"
+                      }}
+                      value={editAnime.featuredRank || ""} 
+                      onChange={e => handleEditChange("featuredRank", e.target.value)} 
+                    />
+                  </div>
+                </div>
+
+                {/* Image Position */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    Image Position (0% = Top, 50% = Center, 100% = Bottom)
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      className="flex-1 accent-purple-600"
+                      value={editAnime.imagePosition ?? 50}
+                      onChange={e => saveImagePositionInModal(Number(e.target.value))}
+                      disabled={editLoading}
+                    />
+                    <span 
+                      className="text-lg font-bold w-14 text-center"
+                      style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--lang-japanese)' }}
+                    >
+                      {editAnime.imagePosition ?? 50}%
+                    </span>
+                  </div>
+                  
+                  {/* Banner Preview */}
+                  {editAnime.imageUrl && (
+                    <div className="mt-3">
+                      <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>Banner Preview:</p>
+                      <div className="relative w-full aspect-[16/6] rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-default)' }}>
+                        <div 
+                          className="absolute inset-0"
+                          style={{
+                            backgroundImage: `url(${editAnime.imageUrl})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: `center ${editAnime.imagePosition ?? 50}%`
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                        <div className="absolute bottom-2 left-3 right-3">
+                          <p className="text-white text-sm font-semibold truncate">{editAnime.name}</p>
+                          <p className="text-white/70 text-xs">{editAnime.language} · {editAnime.totalEpisodes} eps</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={saveAnimeEdit}
+                  disabled={editLoading}
+                  className="flex-1 py-2.5 rounded-lg font-semibold text-white disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, var(--accent-pink), var(--accent-orange))' }}
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  onClick={closeEditModal}
+                  disabled={editLoading}
+                  className="flex-1 py-2.5 rounded-lg font-semibold disabled:opacity-50"
+                  style={{ 
+                    backgroundColor: 'var(--bg-page)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-default)'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hover Preview */}
+        {hoveredAnime && hoveredAnime.imageUrl && (
+          <div 
+            className="fixed z-50 pointer-events-none"
+            style={{ left: hoverPosition.x + 15, top: hoverPosition.y - 60 }}
+          >
+            <div 
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-default)' }}
+            >
+              <div className="relative w-48 aspect-[16/6] rounded overflow-hidden">
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `url(${hoveredAnime.imageUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: `center ${hoveredAnime.imagePosition ?? 50}%`
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                <div className="absolute bottom-1 left-2 right-2">
+                  <p className="text-white text-[10px] font-semibold truncate">{hoveredAnime.name}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
