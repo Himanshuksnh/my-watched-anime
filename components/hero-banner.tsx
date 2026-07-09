@@ -41,7 +41,6 @@ export default function HeroBanner({ animes, onAnimeClick, interval = 5 }: HeroB
     goToSlide(prevIndex)
   }, [currentIndex, animes.length, goToSlide])
 
-  // Auto-slide
   useEffect(() => {
     if (animes.length <= 1) return
     const timer = setInterval(nextSlide, interval * 1000)
@@ -52,7 +51,6 @@ export default function HeroBanner({ animes, onAnimeClick, interval = 5 }: HeroB
 
   const currentAnime = animes[currentIndex]
 
-  // Get object-position based on imagePosition (0-100%)
   const getObjectPosition = (position?: number) => {
     const pos = position ?? 50
     return `center ${pos}%`
@@ -60,9 +58,7 @@ export default function HeroBanner({ animes, onAnimeClick, interval = 5 }: HeroB
 
   return (
     <div className="relative w-full">
-      {/* Main Banner */}
       <div className="hero-banner" onClick={() => onAnimeClick(currentAnime)}>
-        {/* Slides Container */}
         <div className="relative w-full h-full">
           {animes.map((anime, index) => (
             <div
@@ -83,15 +79,12 @@ export default function HeroBanner({ animes, onAnimeClick, interval = 5 }: HeroB
           ))}
         </div>
 
-        {/* Overlay */}
         <div className="hero-banner-overlay" />
 
-        {/* Featured Badge */}
         <div className="hero-banner-badge">
           FEATURED · #{currentAnime.featuredRank}
         </div>
 
-        {/* Content */}
         <div className="hero-banner-content">
           <h1 className="hero-banner-title">{currentAnime.name}</h1>
           <div className="hero-banner-meta">
@@ -107,39 +100,40 @@ export default function HeroBanner({ animes, onAnimeClick, interval = 5 }: HeroB
           </div>
         </div>
 
-        {/* Navigation Arrows */}
         {animes.length > 1 && (
           <>
             <button
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors z-10"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors z-10"
+              style={{ backgroundColor: 'rgba(11, 13, 23, 0.6)', backdropFilter: 'blur(8px)' }}
               onClick={(e) => { e.stopPropagation(); prevSlide() }}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6"/>
               </svg>
             </button>
             <button
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors z-10"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors z-10"
+              style={{ backgroundColor: 'rgba(11, 13, 23, 0.6)', backdropFilter: 'blur(8px)' }}
               onClick={(e) => { e.stopPropagation(); nextSlide() }}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6"/>
               </svg>
             </button>
           </>
         )}
 
-        {/* Dots Navigation */}
         {animes.length > 1 && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
             {animes.map((_, index) => (
               <button
                 key={index}
-                className={`transition-all duration-300 rounded-full ${
-                  index === currentIndex 
-                    ? 'w-6 h-2 bg-white' 
-                    : 'w-2 h-2 bg-white/40 hover:bg-white/60'
-                }`}
+                className="transition-all duration-300 rounded-full"
+                style={{
+                  width: index === currentIndex ? '24px' : '8px',
+                  height: '8px',
+                  backgroundColor: index === currentIndex ? '#8b5cf6' : 'rgba(255,255,255,0.3)'
+                }}
                 onClick={(e) => { e.stopPropagation(); goToSlide(index) }}
               />
             ))}

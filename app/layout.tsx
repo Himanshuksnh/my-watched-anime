@@ -2,8 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/contexts/theme-context"
-import { Toaster } from "@/components/ui/toaster"
 import Navigation from "@/components/navigation"
 import Footer from "@/components/footer"
 
@@ -25,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Anime Collection - Your Personal Anime Hub",
-  description: "Discover, track, and explore your favorite anime from around the world. Your personal anime tracking companion.",
+  title: "Anime Collection - Modern Anime Listing Website",
+  description: "Discover and manage your favorite anime collection with our modern, responsive website.",
   generator: 'v0.dev'
 }
 
@@ -38,14 +36,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}>
-        <ThemeProvider>
-          <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-page)' }}>
-            <Navigation />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <Toaster />
-          </div>
-        </ThemeProvider>
+        <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0b0d17' }}>
+          <Navigation />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
       </body>
     </html>
   )

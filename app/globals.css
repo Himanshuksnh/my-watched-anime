@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 262 83% 65%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -22,37 +22,19 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 262 83% 65%;
     --radius: 0.75rem;
-
-    --bg-page: #0a0b10;
-    --bg-card: rgba(18, 20, 32, 0.6);
-    --bg-card-hover: rgba(28, 30, 48, 0.85);
-    --border-default: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(255, 255, 255, 0.15);
-    --border-accent: #8b5cf6;
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --text-dim: #6b7280;
-    --primary-glow: rgba(139, 92, 246, 0.25);
-    --accent-cyan: #06b6d4;
-    --accent-pink: #ec4899;
-    --accent-orange: #f97316;
-    --lang-japanese: #ec4899;
-    --lang-hindi: #f97316;
-    --lang-english: #06b6d4;
-    --lang-chinese: #eab308;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222.2 84% 5.5%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary: 262 83% 65%;
+    --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -61,27 +43,9 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-
-    --bg-page: #0a0b10;
-    --bg-card: rgba(18, 20, 32, 0.6);
-    --bg-card-hover: rgba(28, 30, 48, 0.85);
-    --border-default: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(255, 255, 255, 0.15);
-    --border-accent: #8b5cf6;
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --text-dim: #6b7280;
-    --primary-glow: rgba(139, 92, 246, 0.25);
-    --accent-cyan: #06b6d4;
-    --accent-pink: #ec4899;
-    --accent-orange: #f97316;
-    --lang-japanese: #ec4899;
-    --lang-hindi: #f97316;
-    --lang-english: #06b6d4;
-    --lang-chinese: #eab308;
+    --border: 217.2 32.6% 14%;
+    --input: 217.2 32.6% 14%;
+    --ring: 262 83% 65%;
   }
 }
 
@@ -90,8 +54,8 @@
     @apply border-border;
   }
   body {
-    background-color: var(--bg-page);
-    color: var(--text-primary);
+    background-color: #0b0d17;
+    color: #e2e8f0;
     font-family: 'Inter', sans-serif;
   }
 }
@@ -143,21 +107,23 @@
 .hero-banner-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 50%);
+  background: linear-gradient(to top, rgba(11, 13, 23, 0.9) 0%, transparent 50%);
 }
 
 .hero-banner-badge {
   position: absolute;
   top: 16px;
   left: 16px;
-  background: var(--bg-card);
+  background: rgba(11, 13, 23, 0.7);
+  backdrop-filter: blur(8px);
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: var(--text-primary);
+  color: #c084fc;
   letter-spacing: 0.5px;
   z-index: 2;
+  border: 1px solid rgba(139, 92, 246, 0.3);
 }
 
 .hero-banner-content {
@@ -173,14 +139,14 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 24px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #f8fafc;
   margin-bottom: 6px;
 }
 
 .hero-banner-meta {
   font-family: 'Inter', sans-serif;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: #94a3b8;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -200,7 +166,7 @@
    ============================================ */
 .shelf-row {
   display: flex;
-  gap: 10px;
+  gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
@@ -218,27 +184,29 @@
 }
 
 /* ============================================
-   ANIME CARD (New Design)
+   ANIME CARD
    ============================================ */
 .anime-card {
-  background: var(--bg-card);
-  border-radius: 10px;
+  background: #141622;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--border-default);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .anime-card:hover {
-  background: var(--bg-card-hover);
-  border-color: rgba(255,255,255,0.12);
+  background: #1a1d2e;
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .anime-card-poster {
   position: relative;
   aspect-ratio: 2/3;
   overflow: hidden;
-  background: rgba(0,0,0,0.3);
+  background: #0d0f1a;
 }
 
 .anime-card-poster img {
@@ -252,30 +220,48 @@
   transform: scale(1.05);
 }
 
+.anime-card-lang-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(11, 13, 23, 0.7);
+  backdrop-filter: blur(6px);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: #c084fc;
+  z-index: 2;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
 .anime-card-ep-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  background: rgba(0,0,0,0.6);
-  padding: 2px 6px;
+  top: 8px;
+  left: 8px;
+  background: rgba(11, 13, 23, 0.7);
+  backdrop-filter: blur(6px);
+  padding: 3px 8px;
   border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--text-primary);
+  font-size: 10px;
+  color: #e2e8f0;
   z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .anime-card-rank-badge {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--border-accent);
-  color: #0B0B12;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: #fff;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -284,53 +270,39 @@
 }
 
 .anime-card-footer {
-  padding: 8px 10px;
-  border-left: 3px solid;
-  background: var(--bg-card);
-  transition: border-color 0.3s ease;
-}
-
-.anime-card:hover .anime-card-footer {
-  border-left-width: 4px;
+  padding: 12px;
 }
 
 .anime-card-name {
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  line-height: 1.3;
 }
 
 .anime-card-meta {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  gap: 12px;
+  font-size: 12px;
+  color: #64748b;
 }
 
-.anime-card-lang {
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
+.anime-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .anime-card-eps {
   font-family: 'JetBrains Mono', monospace;
-  color: var(--text-secondary);
+  color: #94a3b8;
 }
-
-.lang-color-japanese { border-left-color: var(--lang-japanese); }
-.lang-color-hindi { border-left-color: var(--lang-hindi); }
-.lang-color-english { border-left-color: var(--lang-english); }
-.lang-color-chinese { border-left-color: var(--lang-chinese); }
-
-.lang-text-japanese { color: var(--lang-japanese); }
-.lang-text-hindi { color: var(--lang-hindi); }
-.lang-text-english { color: var(--lang-english); }
-.lang-text-chinese { color: var(--lang-chinese); }
 
 /* ============================================
    SECTION HEADER
@@ -339,25 +311,111 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .section-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: #64748b;
 }
 
 .section-view-all {
   font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  color: #c084fc;
   text-decoration: none;
-  transition: color 0.2s ease;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  transition: all 0.2s ease;
 }
 
 .section-view-all:hover {
-  color: var(--text-primary);
+  background: rgba(139, 92, 246, 0.25);
+  color: #d8b4fe;
+}
+
+/* ============================================
+   SEARCH BAR
+   ============================================ */
+.search-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.search-input-wrapper svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #475569;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  background: #141622;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.search-input::placeholder {
+  color: #475569;
+}
+
+.search-input:focus {
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.filter-select {
+  padding: 12px 16px;
+  background: #141622;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  min-width: 160px;
+  transition: border-color 0.2s ease;
+}
+
+.filter-select:focus {
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.filter-select option {
+  background: #141622;
+  color: #e2e8f0;
 }
 
 /* ============================================
@@ -394,31 +452,19 @@
 }
 
 /* ============================================
-   SCROLLBAR HIDE (Global)
-   ============================================ */
-.hide-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* ============================================
    RESPONSIVE CARD SIZES
    ============================================ */
 .card-width-desktop {
-  width: 160px;
+  width: 180px;
 }
 
 .card-width-mobile {
-  width: 110px;
+  width: 130px;
 }
 
 @media (max-width: 768px) {
   .card-width-desktop {
-    width: 110px;
+    width: 140px;
   }
 }
 
@@ -442,9 +488,9 @@
   max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
-  background: #1a1a2e;
+  background: #141622;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 1000;
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -471,7 +517,7 @@
 .modal-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, #1a1a2e 0%, rgba(26, 26, 46, 0.4) 50%, transparent 100%);
+  background: linear-gradient(to top, #141622 0%, rgba(20, 22, 34, 0.4) 50%, transparent 100%);
 }
 
 .modal-hero-content {
@@ -506,7 +552,7 @@
   font-family: 'Space Grotesk', sans-serif;
   font-size: 24px;
   font-weight: 700;
-  color: #fff;
+  color: #f8fafc;
   line-height: 1.2;
 }
 
@@ -521,10 +567,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   font-size: 13px;
-  color: #e0e0e0;
+  color: #cbd5e1;
 }
 
 .modal-body {
@@ -570,10 +616,10 @@
 }
 
 .info-block h3 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  color: #a0a0a0;
+  color: #94a3b8;
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -581,7 +627,7 @@
 
 .info-block p {
   font-size: 14px;
-  color: #c0c0c0;
+  color: #cbd5e1;
   line-height: 1.6;
 }
 
@@ -612,17 +658,17 @@
   border-radius: 8px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
-  color: #c0c0c0;
+  color: #94a3b8;
   transition: all 0.2s;
 }
 
 .episode-node:hover {
-  background: rgba(99, 102, 241, 0.3);
+  background: rgba(139, 92, 246, 0.3);
   color: #fff;
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1, #ec4899);
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -666,14 +712,14 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: #0b0d17;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
+  background: #1e2030;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground));
+  background: #2a2d42;
 }

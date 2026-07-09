@@ -19,26 +19,10 @@ interface AnimeCardProps {
   onClick?: () => void
 }
 
-const langColorMap: Record<string, string> = {
-  Japanese: "japanese",
-  Hindi: "hindi",
-  English: "english",
-  Chinese: "chinese",
-}
-
-const langTextMap: Record<string, string> = {
-  Japanese: "japanese",
-  Hindi: "hindi",
-  English: "english",
-  Chinese: "chinese",
-}
-
 export default function AnimeCard({ anime, onClick }: AnimeCardProps) {
   const [imageLoading, setImageLoading] = useState(true)
   const [imageError, setImageError] = useState(false)
 
-  const langColor = langColorMap[anime.language] || "japanese"
-  const langText = langTextMap[anime.language] || "japanese"
   const showRankBadge = typeof anime.featuredRank === "number" && anime.featuredRank >= 1 && anime.featuredRank <= 10
 
   const getObjectPosition = (position?: number) => {
@@ -61,7 +45,7 @@ export default function AnimeCard({ anime, onClick }: AnimeCardProps) {
             src={anime.imageUrl || "/placeholder.svg"}
             alt={anime.name}
             fill
-            sizes="160px"
+            sizes="180px"
             className={`object-cover transition-transform duration-300 ${
               imageLoading ? "opacity-0" : "opacity-100"
             }`}
@@ -74,14 +58,16 @@ export default function AnimeCard({ anime, onClick }: AnimeCardProps) {
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-            <svg className="w-10 h-10 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
             </svg>
           </div>
         )}
 
-        <div className="anime-card-ep-badge">
-          {anime.totalEpisodes} eps
+        <div className="anime-card-lang-badge">
+          {anime.language}
         </div>
 
         {showRankBadge && (
@@ -91,17 +77,27 @@ export default function AnimeCard({ anime, onClick }: AnimeCardProps) {
         )}
       </div>
 
-      <div className={`anime-card-footer lang-color-${langColor}`}>
+      <div className="anime-card-footer">
         <div className="anime-card-name" title={anime.name}>
           {anime.name}
         </div>
         <div className="anime-card-meta">
-          <span className={`anime-card-lang lang-text-${langText}`}>
-            {anime.language}
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+            </svg>
+            {anime.totalEpisodes} episodes
           </span>
-          <span className="anime-card-eps">
-            {anime.totalEpisodes} ep
-          </span>
+          {anime.season && (
+            <span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <path d="M3 9h18"/>
+                <path d="M9 21V9"/>
+              </svg>
+              Season {anime.season}
+            </span>
+          )}
         </div>
       </div>
     </div>
