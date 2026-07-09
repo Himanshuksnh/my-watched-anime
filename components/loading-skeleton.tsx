@@ -7,25 +7,21 @@ export default function LoadingSkeleton() {
       style={{ pointerEvents: 'none' }}
     >
       <div className="anime-card-poster">
-        <div className="absolute inset-0 animate-pulse" style={{ backgroundColor: '#1a1a24' }} />
-        <div 
-          className="absolute top-2 right-2 rounded px-2 py-1 animate-pulse"
-          style={{ backgroundColor: 'rgba(11, 13, 23, 0.7)', width: '40px', height: '16px' }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a24] to-[#12121a] animate-pulse" />
       </div>
-      <div className="anime-card-footer">
+      <div className="anime-card-footer" style={{ borderLeftColor: 'var(--border-default)' }}>
         <div 
-          className="h-4 rounded mb-3 animate-pulse"
-          style={{ backgroundColor: '#1e2030', width: '80%' }}
+          className="h-3 rounded w-3/4 mb-2 animate-pulse"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
         />
         <div className="anime-card-meta">
           <div 
-            className="h-3 rounded animate-pulse"
-            style={{ backgroundColor: '#1e2030', width: '60px' }}
+            className="h-2.5 rounded w-12 animate-pulse"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
           />
           <div 
-            className="h-3 rounded animate-pulse"
-            style={{ backgroundColor: '#1e2030', width: '50px' }}
+            className="h-2.5 rounded w-8 animate-pulse"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
           />
         </div>
       </div>

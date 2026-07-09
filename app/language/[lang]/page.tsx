@@ -17,7 +17,6 @@ interface Anime {
   imageUrl: string
   createdAt: any
   featuredRank?: number | null
-  imagePosition?: number
 }
 
 export default function LanguageAnimePage({ params }: { params: { lang: string } }) {
@@ -72,27 +71,27 @@ export default function LanguageAnimePage({ params }: { params: { lang: string }
   const sortedAnimes = [...featured, ...rest]
 
   const langColors: Record<string, string> = {
-    Japanese: "#c084fc",
-    Hindi: "#f472b6",
-    English: "#a78bfa",
-    Chinese: "#34d399",
+    Japanese: "var(--lang-japanese)",
+    Hindi: "var(--lang-hindi)",
+    English: "var(--lang-english)",
+    Chinese: "var(--lang-chinese)",
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6">
         <div className="mb-8 animate-fade-in-up">
           <button
             className="mb-6 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
             style={{ 
-              backgroundColor: '#141622',
-              color: '#94a3b8',
-              border: '1px solid rgba(255, 255, 255, 0.06)'
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border-default)'
             }}
             onClick={() => router.back()}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6"/>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </button>
@@ -102,12 +101,12 @@ export default function LanguageAnimePage({ params }: { params: { lang: string }
               className="text-2xl md:text-3xl font-bold mb-1"
               style={{ 
                 fontFamily: "'Space Grotesk', sans-serif",
-                color: langColors[lang] || '#c084fc'
+                color: langColors[lang] || "var(--text-primary)"
               }}
             >
               {lang} Anime
             </h1>
-            <p className="text-sm" style={{ color: '#64748b' }}>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {sortedAnimes.length} anime{sortedAnimes.length !== 1 ? "s" : ""} available
             </p>
           </div>
@@ -126,20 +125,18 @@ export default function LanguageAnimePage({ params }: { params: { lang: string }
             <div 
               className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
               style={{ 
-                backgroundColor: '#141622',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-default)'
               }}
             >
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                <circle cx="9" cy="9" r="2"/>
-                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+              <svg className="w-10 h-10" style={{ color: 'var(--text-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: '#f1f5f9' }}>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               No anime found
             </h3>
-            <p className="text-sm" style={{ color: '#64748b' }}>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               No anime available for this language
             </p>
           </div>
