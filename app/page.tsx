@@ -137,24 +137,6 @@ export default function HomePage() {
           <div className="hero-banner animate-pulse rounded-2xl" style={{ backgroundColor: '#141622' }} />
         )}
 
-        {/* Title */}
-        <div className="text-center mt-8 mb-6">
-          <h1 
-            className="text-4xl md:text-5xl font-bold mb-3"
-            style={{ 
-              fontFamily: "'Space Grotesk', sans-serif",
-              background: 'linear-gradient(135deg, #ec4899, #a855f7)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}
-          >
-            Anime Collection
-          </h1>
-          <p className="text-base" style={{ color: '#64748b' }}>
-            Discover amazing anime from around the world
-          </p>
-        </div>
-
         {/* Search & Filters */}
         <div className="search-container mb-8">
           <div className="search-input-wrapper">
